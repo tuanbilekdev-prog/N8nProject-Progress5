@@ -1,0 +1,359 @@
+{
+  "name": "Progress 5 + 4, webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 1
+        }
+      },
+      "id": "d78ccd0d-7173-4a24-b21c-914210cbff7f",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        -640,
+        240
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Execute Workflow Trigger').first().json.chat_id }}",
+        "file": "={{ $json.data[0].url }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "e2023f0f-c1db-4a0e-b9fc-970f258b3c87",
+      "name": "Send back an image",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -464,
+        1808
+      ],
+      "typeVersion": 1.1,
+      "webhookId": "c516e4a1-3585-49d0-bf5d-4a9ffecd81c0"
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "response",
+              "stringValue": "Success"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1c50450-0708-41fa-9e72-a56ac99756bd",
+      "name": "add response field",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -288,
+        1808
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "content": "## Generate an image with Dall-E 3 and send it via Telegram",
+        "height": 247.42081447963798,
+        "width": 752.0361990950231
+      },
+      "id": "ee8b7662-3377-4341-b7c2-500286d4b003",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -864,
+        1744
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "dall-e-3"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $json.query }}"
+            },
+            {
+              "name": "n",
+              "value": 1
+            },
+            {
+              "name": "size",
+              "value": "1024x1024"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "69c71ad8-e443-4763-ab7d-907935ce2631",
+      "name": "Generate image in Dall-E 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -640,
+        1808
+      ],
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "agent": "openAiFunctionsAgent",
+        "text": "={{ $json.body?.message || $json.message?.text || $json.message || '' }}",
+        "options": {}
+      },
+      "id": "1cff5b82-b5be-45b6-af26-1cfde58f7bff",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -576,
+        32
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bc3934df-8d10-48df-9960-f0db1e806328",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -848,
+        32
+      ],
+      "id": "559558b6-530b-49a2-8bfe-ef6e0a15d302",
+      "name": "Webhook",
+      "webhookId": "bc3934df-8d10-48df-9960-f0db1e806328"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { output: $json.output } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -176,
+        32
+      ],
+      "id": "78c278e8-4360-488c-9b3b-34bc67369e4f",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "This tool retrieves relevant context from Pinecone based on the user's query by performing vector similarity search.\n\nWAJIB gunakan tool ini untuk semua pertanyaan tentang fakta, informasi, presiden, sejarah, teknologi, atau data spesifik apapun. Selalu cari di knowledge base terlebih dahulu sebelum menjawab.\n",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "rag-index-v2",
+          "mode": "list",
+          "cachedResultName": "rag-index-v2"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -384,
+        336
+      ],
+      "id": "ff70b780-2bcf-4422-841b-7bd4abee14ee",
+      "name": "Pinecone Vector Store"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        544
+      ],
+      "id": "0f61ff6c-288f-4c24-b230-d4cd2a69995e",
+      "name": "Embeddings OpenAI"
+    },
+    {
+      "parameters": {
+        "sessionKey": "={{ $json.body.chatId }}",
+        "contextWindowLength": 10
+      },
+      "id": "dd1054c6-c11b-487a-a9c9-f226659a4415",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        -736,
+        448
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "web-app"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -624,
+        416
+      ],
+      "id": "c83b3c58-e730-435d-8243-bf90a8c0827c",
+      "name": "Postgres Chat Memory"
+    },
+    {
+      "parameters": {
+        "description": "call this tool to spesify",
+        "workflowId": {
+          "__rl": true,
+          "value": "ST8BlwkC5QQmL4ii",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/ST8BlwkC5QQmL4ii",
+          "cachedResultName": "Workflow Progress 4"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -512,
+        336
+      ],
+      "id": "c3a612a7-545f-45a9-b59e-096b297688de",
+      "name": "Call 'Workflow Progress 4'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send back an image": {
+      "main": [
+        [
+          {
+            "node": "add response field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate image in Dall-E 3": {
+      "main": [
+        [
+          {
+            "node": "Send back an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Workflow Progress 4'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "434c309a-8f4f-47b0-a314-4b3477cbbfc6",
+  "meta": {
+    "instanceId": "2f6bb680a55db80494bf730c60c2c52cd9449c47989424d01d77d0c5ae933531"
+  },
+  "id": "2ZbwPjvBvVURYj3Y",
+  "tags": []
+}
