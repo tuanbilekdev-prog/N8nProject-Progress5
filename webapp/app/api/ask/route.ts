@@ -24,12 +24,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // n8n webhook expects different formats, try both
     const webhookResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ question })
+      body: JSON.stringify({ 
+        question,
+        message: question, // Some n8n workflows expect 'message'
+        text: question,    // Some expect 'text'
+        query: question   // Some expect 'query'
+      })
     });
 
     const text = await webhookResponse.text();
@@ -56,14 +62,31 @@ export async function POST(req: NextRequest) {
       answer = parsed;
     } else if (
       parsed &&
-      typeof parsed === "object" &&
-      "answer" in parsed &&
-      typeof (parsed as any).answer === "string"
+      typeof parsed === "object"
     ) {
-      answer = (parsed as any).answer;
+      // Try different response formats from n8n
+      const response = parsed as any;
+      
+      if (response.output && typeof response.output === "string") {
+        answer = response.output;
+      } else if (response.answer && typeof response.answer === "string") {
+        answer = response.answer;
+      } else if (response.text && typeof response.text === "string") {
+        answer = response.text;
+      } else if (response.message && typeof response.message === "string") {
+        answer = response.message;
+      } else if (response.data && typeof response.data === "string") {
+        answer = response.data;
+      } else {
+        // If no known format, stringify the whole response
+        answer = JSON.stringify(parsed, null, 2);
+      }
     } else {
       answer = JSON.stringify(parsed, null, 2);
     }
+
+    // Log for debugging
+    console.log("n8n response:", { parsed, answer });
 
     return NextResponse.json({ answer });
   } catch (error) {

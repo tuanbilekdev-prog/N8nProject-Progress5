@@ -60,10 +60,24 @@ export default function RegisterPage() {
     }
 
     try {
-      // TODO: Implement actual registration API call
-      // For now, simulate registration
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Terjadi kesalahan saat mendaftar");
+      }
+
       setSuccess(true);
       setTimeout(() => {
         router.push("/login");

@@ -24,9 +24,19 @@ NEXTAUTH_URL=http://localhost:3000
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 
+# Supabase Database (REQUIRED untuk menyimpan data login & chat)
+# Lihat SUPABASE_SETUP.md untuk panduan lengkap
+SUPABASE_DB_HOST=your-supabase-host.supabase.co
+SUPABASE_DB_PORT=5432
+SUPABASE_DB_NAME=postgres
+SUPABASE_DB_USER=postgres.xxxxx
+SUPABASE_DB_PASSWORD=your-supabase-password
+
 # N8N Webhook URL (REQUIRED untuk fitur chat)
 N8N_WEBHOOK_URL=your-n8n-webhook-url
 ```
+
+**Penting:** Untuk menggunakan fitur login dan chat memory, kamu harus setup Supabase terlebih dahulu. Lihat file `SUPABASE_SETUP.md` di root project untuk panduan lengkap.
 
 ### 3. Generate NEXTAUTH_SECRET
 
@@ -78,8 +88,11 @@ Klik tombol "Login dengan Google" (hanya muncul jika Google OAuth sudah dikonfig
 
 ## Features
 
-- ✅ Login dengan username/password
-- ✅ Login dengan Google OAuth
+- ✅ Login dengan username/password (disimpan di Supabase)
+- ✅ Login dengan Google OAuth (disimpan di Supabase)
+- ✅ Registrasi akun baru (disimpan di Supabase)
+- ✅ Chat history tersimpan di Supabase (persistent)
+- ✅ Chat memory untuk n8n menggunakan Supabase Postgres
 - ✅ Protected routes dengan middleware
 - ✅ Session management
 - ✅ Dark/Light mode

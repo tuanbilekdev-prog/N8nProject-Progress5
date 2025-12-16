@@ -55,25 +55,138 @@ export default function ChatPage() {
     }
   }, []);
 
-  // Load chat history from localStorage
+  // Load chat history from Supabase
   useEffect(() => {
-    const savedHistory = localStorage.getItem("chatHistory");
-    if (savedHistory) {
-      try {
-        const history = JSON.parse(savedHistory) as ChatHistory[];
-        setChatHistory(history);
-      } catch (e) {
-        console.error("Error loading chat history:", e);
-      }
+    if (status === "authenticated" && session?.user?.id) {
+      const loadChatHistory = async () => {
+        try {
+          const res = await fetch("/api/chat");
+          if (res.ok) {
+            const data = await res.json();
+            const sessions = data.sessions || [];
+            // Convert Supabase sessions to ChatHistory format
+            const history: ChatHistory[] = sessions.map((s: any) => ({
+              id: s.id,
+              title: s.title,
+              messages: [], // Will be loaded when selected
+              timestamp: new Date(s.updated_at || s.created_at).getTime()
+            }));
+            setChatHistory(history);
+          }
+        } catch (e) {
+          console.error("Error loading chat history:", e);
+          // Fallback to localStorage if Supabase fails
+          const savedHistory = localStorage.getItem("chatHistory");
+          if (savedHistory) {
+            try {
+              const history = JSON.parse(savedHistory) as ChatHistory[];
+              setChatHistory(history);
+            } catch (err) {
+              console.error("Error parsing localStorage:", err);
+            }
+          }
+        }
+      };
+      loadChatHistory();
     }
-  }, []);
+  }, [status, session]);
 
-  // Save chat history when messages change (debounced)
+  // Save chat messages to Supabase (debounced)
   useEffect(() => {
-    if (messages.length > 1 && currentChatId) {
-      const timeoutId = setTimeout(() => {
-        setChatHistory(prevHistory => {
-          const history = [...prevHistory];
+    if (messages.length > 1 && currentChatId && status === "authenticated" && session?.user?.id) {
+      const timeoutId = setTimeout(async () => {
+        try {
+          const firstUserMessage = messages.find(m => m.from === "user");
+          const title = firstUserMessage?.text.slice(0, 30) || "Chat Baru";
+
+          // Check if session exists in Supabase (only if currentChatId looks like UUID)
+          const isSupabaseSession = currentChatId.length > 20; // UUID is longer than timestamp-based ID
+          
+          if (!isSupabaseSession) {
+            // Create new session in Supabase
+            const res = await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "createSession",
+                title
+              })
+            });
+            
+            if (res.ok) {
+              const data = await res.json();
+              const newSessionId = data.session.id;
+              setCurrentChatId(newSessionId);
+              
+              // Save all messages to new session
+              for (let i = 0; i < messages.length; i++) {
+                const msg = messages[i];
+                await fetch("/api/chat", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    action: "saveMessage",
+                    sessionId: newSessionId,
+                    role: msg.from === "user" ? "user" : "assistant",
+                    content: msg.text,
+                    orderIndex: i
+                  })
+                });
+              }
+            }
+          } else {
+            // Update existing session title if needed
+            await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "updateSession",
+                sessionId: currentChatId,
+                title
+              })
+            });
+
+            // Save only new messages (check existing messages first)
+            // For simplicity, we'll save all messages (API will handle duplicates)
+            for (let i = 0; i < messages.length; i++) {
+              const msg = messages[i];
+              await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "saveMessage",
+                  sessionId: currentChatId,
+                  role: msg.from === "user" ? "user" : "assistant",
+                  content: msg.text,
+                  orderIndex: i
+                })
+              });
+            }
+          }
+
+          // Update local history
+          setChatHistory(prevHistory => {
+            const history = [...prevHistory];
+            const existingIndex = history.findIndex(h => h.id === currentChatId);
+            const chatData: ChatHistory = {
+              id: currentChatId,
+              title,
+              messages,
+              timestamp: Date.now()
+            };
+            
+            if (existingIndex >= 0) {
+              history[existingIndex] = chatData;
+            } else {
+              history.push(chatData);
+            }
+            
+            return history.sort((a, b) => b.timestamp - a.timestamp).slice(0, 20);
+          });
+        } catch (error) {
+          console.error("Error saving to Supabase:", error);
+          // Fallback to localStorage
+          const history = [...chatHistory];
           const existingIndex = history.findIndex(h => h.id === currentChatId);
           const firstUserMessage = messages.find(m => m.from === "user");
           const title = firstUserMessage?.text.slice(0, 30) || "Chat Baru";
@@ -91,16 +204,15 @@ export default function ChatPage() {
             history.push(chatData);
           }
           
-          // Sort by timestamp (newest first) and keep only last 20
           const sorted = history.sort((a, b) => b.timestamp - a.timestamp).slice(0, 20);
           localStorage.setItem("chatHistory", JSON.stringify(sorted));
-          return sorted;
-        });
-      }, 500); // Debounce 500ms
+          setChatHistory(sorted);
+        }
+      }, 1000); // Debounce 1s
       
       return () => clearTimeout(timeoutId);
     }
-  }, [messages, currentChatId]);
+  }, [messages, currentChatId, status, session]);
 
   // Initialize current chat ID
   useEffect(() => {
@@ -140,7 +252,29 @@ export default function ChatPage() {
     setSidebarOpen(false);
   };
 
-  const loadChat = (chatId: string) => {
+  const loadChat = async (chatId: string) => {
+    try {
+      // Try to load from Supabase first
+      const res = await fetch(`/api/chat?sessionId=${chatId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const messages = data.messages || [];
+        // Convert Supabase messages to Message format
+        const formattedMessages: Message[] = messages.map((m: any, idx: number) => ({
+          id: idx + 1,
+          from: m.role === "user" ? "user" : "bot",
+          text: m.content
+        }));
+        setCurrentChatId(chatId);
+        setMessages(formattedMessages);
+        setSidebarOpen(false);
+        return;
+      }
+    } catch (error) {
+      console.error("Error loading chat from Supabase:", error);
+    }
+
+    // Fallback to local history
     const chat = chatHistory.find(h => h.id === chatId);
     if (chat) {
       setCurrentChatId(chatId);
@@ -149,11 +283,24 @@ export default function ChatPage() {
     }
   };
 
-  const deleteChat = (chatId: string) => {
+  const deleteChat = async (chatId: string) => {
+    setOpenMenuId(null);
+    
+    try {
+      // Delete from Supabase
+      await fetch(`/api/chat?sessionId=${chatId}`, {
+        method: "DELETE"
+      });
+    } catch (error) {
+      console.error("Error deleting from Supabase:", error);
+    }
+
+    // Update local state
     const updated = chatHistory.filter(h => h.id !== chatId);
     setChatHistory(updated);
+    
+    // Fallback to localStorage
     localStorage.setItem("chatHistory", JSON.stringify(updated));
-    setOpenMenuId(null);
     
     if (currentChatId === chatId) {
       startNewChat();
