@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 export async function POST(req: NextRequest) {
   try {
+    // Get user session untuk mendapatkan userId
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const question = body?.question;
+    const chatId = body?.chatId || `chat-${Date.now()}`; // Default chatId jika tidak ada
 
     if (!question || typeof question !== "string") {
       return NextResponse.json(
@@ -25,6 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     // n8n webhook expects different formats, try both
+    // Tambahkan userId dan chatId untuk memisahkan chat memory per user
     const webhookResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: {
@@ -34,7 +48,15 @@ export async function POST(req: NextRequest) {
         question,
         message: question, // Some n8n workflows expect 'message'
         text: question,    // Some expect 'text'
-        query: question   // Some expect 'query'
+        query: question,  // Some expect 'query'
+        userId: session.user.id,  // User ID untuk memisahkan chat memory
+        chatId: chatId,   // Chat ID untuk memisahkan session chat
+        body: {
+          message: question,
+          text: question,
+          chatId: chatId,
+          userId: session.user.id
+        }
       })
     });
 

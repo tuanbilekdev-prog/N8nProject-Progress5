@@ -347,7 +347,10 @@ export default function ChatPage() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({ 
+          question,
+          chatId: currentChatId || `chat-${Date.now()}`
+        })
       });
 
       if (!res.ok) {
