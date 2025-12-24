@@ -325,6 +325,129 @@ export default function ChatPage() {
     }
   }, [openMenuId, userMenuOpen]);
 
+  // Function to format message text with better structure
+  const formatMessage = (text: string) => {
+    // Split by double newlines to detect paragraphs
+    const paragraphs = text.split(/\n\n+/);
+    
+    return paragraphs.map((para, idx) => {
+      const trimmedPara = para.trim();
+      
+      // Check if paragraph is a numbered list (1., 2., etc.)
+      if (/^\d+\.\s/.test(trimmedPara)) {
+        const lines = trimmedPara.split('\n').filter(line => line.trim());
+        return (
+          <div key={idx} className="chat-message-list">
+            {lines.map((line, lineIdx) => {
+              // Extract number and content
+              const match = line.match(/^(\d+)\.\s*(.+)/);
+              if (match) {
+                const [, num, content] = match;
+                
+                // Check if content has product info format (Name: **Title**, Specs: ..., Quantity: ..., Location: ...)
+                const productMatch = content.match(/(.+?):\s*\*\*(.+?)\*\*/);
+                if (productMatch) {
+                  const productName = productMatch[2];
+                  const restContent = content.replace(productMatch[0], '').trim();
+                  
+                  // Extract specifications, quantity, location
+                  const specsMatch = restContent.match(/Specifications?:\s*(.+?)(?:\n|$)/i);
+                  const qtyMatch = restContent.match(/Available Quantity|Quantity|Stok|Jumlah:\s*(\d+)/i);
+                  const locMatch = restContent.match(/Location|Lokasi:\s*(.+?)(?:\n|$)/i);
+                  
+                  return (
+                    <div key={lineIdx} className="chat-list-item chat-product-item">
+                      <span className="chat-list-number">{num}.</span>
+                      <div className="chat-list-content">
+                        <strong className="chat-product-name">{productName}</strong>
+                        {specsMatch && (
+                          <div className="chat-product-spec">
+                            <span className="chat-spec-label">Spesifikasi:</span>
+                            <span className="chat-spec-value">{specsMatch[1].trim()}</span>
+                          </div>
+                        )}
+                        <div className="chat-product-details">
+                          {qtyMatch && (
+                            <span className="chat-detail-badge chat-detail-qty">
+                              Stok: {qtyMatch[1]} unit
+                            </span>
+                          )}
+                          {locMatch && (
+                            <span className="chat-detail-badge chat-detail-loc">
+                              Lokasi: {locMatch[1].trim()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // Regular list item with bold text
+                const formattedContent = content.split(/(\*\*.*?\*\*)/g).map((part, partIdx) => {
+                  if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={partIdx} className="chat-bold">{part.slice(2, -2)}</strong>;
+                  }
+                  return part;
+                });
+                
+                return (
+                  <div key={lineIdx} className="chat-list-item">
+                    <span className="chat-list-number">{num}.</span>
+                    <div className="chat-list-content">
+                      {formattedContent}
+                    </div>
+                  </div>
+                );
+              }
+              return <div key={lineIdx} className="chat-list-item">{line}</div>;
+            })}
+          </div>
+        );
+      }
+      
+      // Check if paragraph contains bold text (markdown **)
+      const hasBold = /\*\*.*?\*\*/.test(trimmedPara);
+      if (hasBold) {
+        const parts = trimmedPara.split(/(\*\*.*?\*\*)/g);
+        return (
+          <div key={idx} className="chat-message-paragraph">
+            {parts.map((part, partIdx) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={partIdx} className="chat-bold">{part.slice(2, -2)}</strong>;
+              }
+              // Check for links (format: Sumber: http://...)
+              if (part.includes('Sumber:') || part.includes('http')) {
+                const linkMatch = part.match(/(Sumber:?\s*)(https?:\/\/[^\s]+)/);
+                if (linkMatch) {
+                  const [, prefix, url] = linkMatch;
+                  return (
+                    <span key={partIdx}>
+                      {part.split(linkMatch[0])[0]}
+                      {prefix}
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="chat-link">
+                        {url}
+                      </a>
+                      {part.split(linkMatch[0])[1]}
+                    </span>
+                  );
+                }
+              }
+              return <span key={partIdx}>{part}</span>;
+            })}
+          </div>
+        );
+      }
+      
+      // Regular paragraph
+      return (
+        <div key={idx} className="chat-message-paragraph">
+          {trimmedPara}
+        </div>
+      );
+    });
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
@@ -558,7 +681,13 @@ export default function ChatPage() {
                       isUser ? "chat-bubble-user" : "chat-bubble-bot"
                     }`}
                   >
-                    {message.text}
+                    {isUser ? (
+                      message.text
+                    ) : (
+                      <div className="chat-message-content">
+                        {formatMessage(message.text)}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

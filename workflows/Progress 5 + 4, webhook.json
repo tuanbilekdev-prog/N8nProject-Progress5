@@ -5,125 +5,114 @@
       "parameters": {
         "model": "gpt-4o",
         "options": {
-          "temperature": 1
+          "temperature": 0.5
         }
       },
-      "id": "d78ccd0d-7173-4a24-b21c-914210cbff7f",
+      "id": "0d81014e-c6a4-4469-9c50-d35f90654e53",
       "name": "OpenAI Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "position": [
-        -640,
-        240
+        -1168,
+        -912
       ],
-      "typeVersion": 1
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "2uvqmAcIYmjuOE7e",
+          "name": "OpenAi account"
+        }
+      }
     },
     {
       "parameters": {
-        "operation": "sendPhoto",
-        "chatId": "={{ $('Execute Workflow Trigger').first().json.chat_id }}",
-        "file": "={{ $json.data[0].url }}",
+        "chatId": "={{ $('Listen for incoming events').first().json.message.from.id }}",
+        "text": "={{ $json.output }}",
         "additionalFields": {
+          "appendAttribution": false,
           "parse_mode": "HTML"
         }
       },
-      "id": "e2023f0f-c1db-4a0e-b9fc-970f258b3c87",
-      "name": "Send back an image",
+      "id": "dea3d5c2-81ab-495f-b3af-55d2ba5beb49",
+      "name": "Telegram",
       "type": "n8n-nodes-base.telegram",
       "position": [
-        -464,
-        1808
+        -576,
+        -992
       ],
       "typeVersion": 1.1,
-      "webhookId": "c516e4a1-3585-49d0-bf5d-4a9ffecd81c0"
+      "webhookId": "0d0f77b1-076b-4954-888e-b5bc98b66f02",
+      "credentials": {
+        "telegramApi": {
+          "id": "Zm9CaSHwSoDbY96k",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
-        "fields": {
-          "values": [
-            {
-              "name": "response",
-              "stringValue": "Success"
-            }
-          ]
-        },
-        "options": {}
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}\n",
+        "text": "={{ $('AI Agent').item.json.output.replace(/&/g, \"&amp;\").replace(/>/g, \"&gt;\").replace(/</g, \"&lt;\").replace(/\"/g, \"&quot;\") }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
       },
-      "id": "b1c50450-0708-41fa-9e72-a56ac99756bd",
-      "name": "add response field",
-      "type": "n8n-nodes-base.set",
+      "id": "8f0f7f7d-5f08-420a-812f-e691903c872b",
+      "name": "Correct errors",
+      "type": "n8n-nodes-base.telegram",
       "position": [
-        -288,
-        1808
+        -336,
+        -960
       ],
-      "typeVersion": 3.2
-    },
-    {
-      "parameters": {
-        "content": "## Generate an image with Dall-E 3 and send it via Telegram",
-        "height": 247.42081447963798,
-        "width": 752.0361990950231
-      },
-      "id": "ee8b7662-3377-4341-b7c2-500286d4b003",
-      "name": "Sticky Note",
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -864,
-        1744
-      ],
-      "typeVersion": 1
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.openai.com/v1/images/generations",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "model",
-              "value": "dall-e-3"
-            },
-            {
-              "name": "prompt",
-              "value": "={{ $json.query }}"
-            },
-            {
-              "name": "n",
-              "value": 1
-            },
-            {
-              "name": "size",
-              "value": "1024x1024"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "69c71ad8-e443-4763-ab7d-907935ce2631",
-      "name": "Generate image in Dall-E 3",
-      "type": "n8n-nodes-base.httpRequest",
-      "position": [
-        -640,
-        1808
-      ],
-      "typeVersion": 4.1
+      "typeVersion": 1.1,
+      "webhookId": "e33e0672-4a19-448a-817c-91bb2b859525",
+      "credentials": {
+        "telegramApi": {
+          "id": "Zm9CaSHwSoDbY96k",
+          "name": "Telegram account"
+        }
+      }
     },
     {
       "parameters": {
         "agent": "openAiFunctionsAgent",
         "text": "={{ $json.body?.message || $json.message?.text || $json.message || '' }}",
-        "options": {}
+        "options": {
+          "systemMessage": "Kamu adalah asisten AI yang membantu menjawab pertanyaan berdasarkan knowledge base.\n\nATURAN PENTING:\n\n1. SELALU gunakan Pinecone Vector Store tool terlebih dahulu untuk mencari informasi di knowledge base\n\n2. WAJIB: Jika Pinecone Vector Store mengembalikan hasil kosong, tidak relevan, atau tidak menjawab pertanyaan user dengan baik, LANGSUNG gunakan SerpAPI tool untuk mencari di Google. \n\n3. PENTING: Ketika menggunakan SerpAPI tool, SELALU tambahkan kata \"terbaru\" atau \"2025\" atau \"2026\" atau \"saat ini\" ke dalam query untuk mendapatkan informasi yang paling up-to-date. Contoh: jika user bertanya \"siapa presiden indonesia\", gunakan query \"siapa presiden indonesia terbaru 2025\" saat memanggil SerpAPI tool.\n\n4. JANGAN PERNAH membuat atau mengarang informasi yang tidak ada di knowledge base ATAU hasil pencarian Google\n\n5. Jika data tidak ditemukan di knowledge base DAN tidak ditemukan di Google setelah menggunakan SerpAPI, baru katakan dengan jujur: \"Maaf, saya tidak menemukan informasi tersebut di knowledge base maupun di Google. Silakan coba dengan kata kunci lain atau hubungi admin untuk menambahkan informasi tersebut.\"\n\n6. HANYA jawab berdasarkan data yang ditemukan dari tool Pinecone Vector Store ATAU SerpAPI tool\n\n7. Jika hasil pencarian kosong atau tidak relevan, jangan membuat jawaban sendiri\n\n8. Jangan mengarang nama produk, stok, harga, atau informasi spesifik apapun yang tidak ada di knowledge base ATAU hasil pencarian Google\n\nUrutan penggunaan tool yang WAJIB diikuti:\n- Langkah 1: Gunakan Pinecone Vector Store untuk mencari di knowledge base\n- Langkah 2: Evaluasi hasil dari Pinecone Vector Store:\n  * Jika hasil kosong → LANGSUNG gunakan SerpAPI tool dengan menambahkan \"terbaru\" atau \"2025\" atau \"2026\" ke query\n  * Jika hasil tidak relevan → LANGSUNG gunakan SerpAPI tool dengan menambahkan \"terbaru\" atau \"2025\" atau \"2026\" ke query\n  * Jika hasil tidak menjawab pertanyaan → LANGSUNG gunakan SerpAPI tool dengan menambahkan \"terbaru\" atau \"2025\" atau \"2026\" ke query\n  * Jika hasil relevan dan menjawab pertanyaan → gunakan hasil tersebut\n- Langkah 3: Jika menggunakan SerpAPI, pastikan query yang dikirim sudah ditambahkan kata \"terbaru\" atau \"2025\" atau \"2026\" untuk mendapatkan informasi terbaru\n\nPENTING: Saat menggunakan SerpAPI tool, SELALU modifikasi query dengan menambahkan kata kunci waktu seperti \"terbaru\", \"2025\", \"2026\", \"saat ini\", atau \"hari ini\" untuk memastikan mendapatkan informasi yang paling up-to-date.\n\nIngat: Lebih baik mencari di Google melalui SerpAPI dengan query yang sudah ditambahkan kata \"terbaru\" atau \"2025\" daripada mengatakan \"tidak tahu\"."
+        }
       },
-      "id": "1cff5b82-b5be-45b6-af26-1cfde58f7bff",
+      "id": "fa3c526e-30e0-4f2b-abc1-2f9e9f1284db",
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "position": [
-        -576,
-        32
+        -1088,
+        -1136
       ],
       "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1376,
+        -1120
+      ],
+      "id": "a1be3770-a5ea-4ed1-b373-90421c2379a1",
+      "name": "Telegram Trigger",
+      "webhookId": "f7b24e5c-6669-4601-bc0b-30f3d4ca7c00",
+      "credentials": {
+        "telegramApi": {
+          "id": "Zm9CaSHwSoDbY96k",
+          "name": "Telegram account"
+        }
+      }
     },
     {
       "parameters": {
@@ -135,10 +124,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -848,
-        32
+        -1360,
+        -912
       ],
-      "id": "559558b6-530b-49a2-8bfe-ef6e0a15d302",
+      "id": "78cc54a3-5155-4a0b-b1fa-e89fa55ce42f",
       "name": "Webhook",
       "webhookId": "bc3934df-8d10-48df-9960-f0db1e806328"
     },
@@ -151,32 +140,38 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        -176,
-        32
+        -528,
+        -1152
       ],
-      "id": "78c278e8-4360-488c-9b3b-34bc67369e4f",
+      "id": "3b4c58f9-24c4-4a94-a7b2-06a76687f889",
       "name": "Respond to Webhook1"
     },
     {
       "parameters": {
         "mode": "retrieve-as-tool",
-        "toolDescription": "This tool retrieves relevant context from Pinecone based on the user's query by performing vector similarity search.\n\nWAJIB gunakan tool ini untuk semua pertanyaan tentang fakta, informasi, presiden, sejarah, teknologi, atau data spesifik apapun. Selalu cari di knowledge base terlebih dahulu sebelum menjawab.\n",
+        "toolDescription": "This tool retrieves relevant context from Pinecone knowledge base based on the user's query.\n\nATURAN WAJIB:\n1. WAJIB gunakan tool ini untuk SEMUA pertanyaan tentang fakta, informasi, produk, stok, harga, atau data spesifik apapun\n2. JANGAN pernah menjawab pertanyaan tentang data spesifik tanpa menggunakan tool ini terlebih dahulu\n3. Jika tool ini mengembalikan hasil kosong atau tidak relevan, katakan bahwa data tidak ditemukan\n4. JANGAN membuat atau mengarang data jika tool ini tidak menemukan hasil\n\nTool ini adalah SATU-SATUNYA sumber data yang valid. Jika tidak ada hasil dari tool ini, berarti data tidak ada di knowledge base.",
         "pineconeIndex": {
           "__rl": true,
-          "value": "rag-index-v2",
+          "value": "n8n",
           "mode": "list",
-          "cachedResultName": "rag-index-v2"
+          "cachedResultName": "n8n"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
       "typeVersion": 1.3,
       "position": [
-        -384,
-        336
+        -944,
+        -816
       ],
-      "id": "ff70b780-2bcf-4422-841b-7bd4abee14ee",
-      "name": "Pinecone Vector Store"
+      "id": "d9f3758b-09af-46f5-a96b-11a8983c49b8",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "NWVHOwN5fIDXSZ0d",
+          "name": "PineconeApi account"
+        }
+      }
     },
     {
       "parameters": {
@@ -185,43 +180,76 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.2,
       "position": [
-        -384,
-        544
+        -912,
+        -608
       ],
-      "id": "0f61ff6c-288f-4c24-b230-d4cd2a69995e",
-      "name": "Embeddings OpenAI"
-    },
-    {
-      "parameters": {
-        "sessionKey": "={{ $json.body.chatId }}",
-        "contextWindowLength": 10
-      },
-      "id": "dd1054c6-c11b-487a-a9c9-f226659a4415",
-      "name": "Window Buffer Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "position": [
-        -736,
-        448
-      ],
-      "typeVersion": 1
+      "id": "505d947b-3175-4758-aa48-06ec01122360",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "2uvqmAcIYmjuOE7e",
+          "name": "OpenAi account"
+        }
+      }
     },
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "web-app"
+        "sessionKey": "=       ={{ $json.body.userId || $json.userId || 'default' }}",
+        "contextWindowLength": 10
       },
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        -624,
-        416
+        -1152,
+        -736
       ],
-      "id": "c83b3c58-e730-435d-8243-bf90a8c0827c",
-      "name": "Postgres Chat Memory"
+      "id": "2d2b9142-218c-4365-80b8-697a1de794e3",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "LEnFwhEp5osMkkKY",
+          "name": "Postgres account"
+        }
+      }
     },
     {
       "parameters": {
-        "description": "call this tool to spesify",
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0fab176b-0a8c-4f35-adb2-2c9e11c3cbd9",
+              "leftValue": "={{ $('Webhook').isExecuted }}",
+              "rightValue": "web-app",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -800,
+        -1088
+      ],
+      "id": "345ceb00-2021-4346-acea-bdf7071d109a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "description": "Gunakan tool ini untuk mencari dan memproses file dari Google Drive berdasarkan query user. \nTool ini akan:\n   - Mencari file di folder Google Drive berdasarkan query\n   - Download file yang relevan\n   - Memproses file dan menyimpannya ke Pinecone Vector Store\n   \n   WAJIB gunakan tool ini ketika user meminta:\n   - File tertentu dari Google Drive\n   - Informasi dari dokumen\n   - Upload atau proses file\n   - Atau query yang memerlukan akses ke file di Google Drive\n   \n   Input: query (string) - kata kunci untuk mencari file",
         "workflowId": {
           "__rl": true,
           "value": "ST8BlwkC5QQmL4ii",
@@ -237,11 +265,33 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        -512,
-        336
+        -1040,
+        -736
       ],
-      "id": "c3a612a7-545f-45a9-b59e-096b297688de",
+      "id": "11c6aeb5-5c83-452a-98fc-0fcf0c1b9d50",
       "name": "Call 'Workflow Progress 4'"
+    },
+    {
+      "parameters": {
+        "options": {
+          "gl": "id",
+          "hl": "id"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -720
+      ],
+      "id": "00d45527-780e-448d-87ad-462e711c0dbc",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "iiSMijpAZyPkW717",
+          "name": "SerpAPI account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -250,7 +300,19 @@
       "main": [
         [
           {
-            "node": "Respond to Webhook1",
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Correct errors",
             "type": "main",
             "index": 0
           }
@@ -268,22 +330,11 @@
         ]
       ]
     },
-    "Send back an image": {
+    "Telegram Trigger": {
       "main": [
         [
           {
-            "node": "add response field",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Generate image in Dall-E 3": {
-      "main": [
-        [
-          {
-            "node": "Send back an image",
+            "node": "AI Agent",
             "type": "main",
             "index": 0
           }
@@ -334,7 +385,36 @@
         ]
       ]
     },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Call 'Workflow Progress 4'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
       "ai_tool": [
         [
           {
@@ -346,12 +426,13 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "434c309a-8f4f-47b0-a314-4b3477cbbfc6",
+  "versionId": "d9f164db-4cfb-4585-bdef-8e0bbd837dce",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "2f6bb680a55db80494bf730c60c2c52cd9449c47989424d01d77d0c5ae933531"
   },
   "id": "2ZbwPjvBvVURYj3Y",

@@ -89,8 +89,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        304,
-        -176
+        336,
+        -144
       ],
       "id": "dc09eea6-e1eb-46ec-9a07-347e8d39fd56",
       "name": "Download file",
@@ -102,19 +102,9 @@
       }
     },
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        -48,
-        -176
-      ],
-      "id": "7c80c3fd-b785-4192-b4c0-4d29c5817ac0",
-      "name": "When clicking ‘Execute workflow’"
-    },
-    {
       "parameters": {
         "resource": "fileFolder",
+        "queryString": "=     {{ $json.query || $json.body?.query || $json.question || '*' }}",
         "returnAll": true,
         "filter": {
           "folderId": {
@@ -124,7 +114,9 @@
           }
         },
         "options": {
-          "fields": []
+          "fields": [
+            "*"
+          ]
         }
       },
       "type": "n8n-nodes-base.googleDrive",
@@ -135,12 +127,44 @@
       ],
       "id": "2ae7f6b1-ef33-4fa0-88d9-80295ffe580e",
       "name": "Search files and folders",
+      "alwaysOutputData": false,
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "zDvo1k70I9AFa128",
           "name": "Google Drive account"
         }
       }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"name\": \"Return Response\",\n  \"type\": \"n8n-nodes-base.set\",\n  \"parameters\": {\n    \"fields\": {\n      \"values\": [\n        {\n          \"name\": \"output\",\n          \"stringValue\": \"File berhasil diproses dan disimpan ke knowledge base. Data sudah tersedia untuk pencarian.\"\n        },\n        {\n          \"name\": \"status\",\n          \"stringValue\": \"success\"\n        }\n      ]\n    }\n  }\n}",
+        "includeOtherFields": true,
+        "include": "selected",
+        "includeFields": "=response: \"File berhasil diproses dan disimpan ke Pinecone Vector Store\" filesProcessed: ={{ $('Pinecone Vector Store').all().length }} status: \"success\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        -176
+      ],
+      "id": "839755b4-1c2b-4508-97c8-79bfab4705c4",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "inputSource": "jsonExample"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -48,
+        -176
+      ],
+      "id": "d62aff5f-ea15-4077-b5a7-3c209b8f9ea4",
+      "name": "When Executed by Another Workflow"
     }
   ],
   "pinData": {},
@@ -151,17 +175,6 @@
           {
             "node": "Pinecone Vector Store",
             "type": "ai_embedding",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "When clicking ‘Execute workflow’": {
-      "main": [
-        [
-          {
-            "node": "Search files and folders",
-            "type": "main",
             "index": 0
           }
         ]
@@ -210,13 +223,35 @@
           }
         ]
       ]
+    },
+    "Pinecone Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "94a09282-0fb2-4891-88e8-f2e69e72f2c4",
+  "versionId": "98560989-674d-44bb-987b-553395c90540",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2f6bb680a55db80494bf730c60c2c52cd9449c47989424d01d77d0c5ae933531"
