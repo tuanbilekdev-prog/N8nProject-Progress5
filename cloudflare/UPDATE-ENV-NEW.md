@@ -1,17 +1,12 @@
-# Update Environment Variables
+# Update Environment Variables untuk devai.sbs
 
 ## Update webapp/.env.local
 
-File `webapp/.env.local` perlu diupdate untuk menggunakan URL Cloudflare.
+File `webapp/.env.local` perlu diupdate untuk menggunakan URL Cloudflare dengan domain baru.
 
 ### Perubahan yang diperlukan:
 
-Ganti `N8N_WEBHOOK_URL` dari:
-```env
-N8N_WEBHOOK_URL=https://unemigrating-visionally-jeffery.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328
-```
-
-Menjadi:
+Update `N8N_WEBHOOK_URL` menjadi:
 ```env
 N8N_WEBHOOK_URL=https://webhook.devai.sbs/webhook/bc3934df-8d10-48df-9960-f0db1e806328
 ```
@@ -25,7 +20,7 @@ N8N_WEBHOOK_URL=https://webhook.devai.sbs/webhook/bc3934df-8d10-48df-9960-f0db1e
 NEXTAUTH_SECRET=your-secret-key-here
 NEXTAUTH_URL=http://localhost:3000
 
-# N8N Webhook URL (Cloudflare)
+# N8N Webhook URL (Cloudflare - Domain baru: devai.sbs)
 N8N_WEBHOOK_URL=https://webhook.devai.sbs/webhook/bc3934df-8d10-48df-9960-f0db1e806328
 
 # Supabase Database (jika digunakan)

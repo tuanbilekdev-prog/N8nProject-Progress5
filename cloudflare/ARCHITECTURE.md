@@ -6,14 +6,14 @@ Proyek ini menggunakan Cloudflare untuk DNS management, tunneling, dan security 
 ## Komponen
 
 ### 1. Cloudflare DNS
-- Domain: devai.com
+- Domain: devai.sbs
 - Subdomain:
-  - `n8n.devai.com` → n8n instance (localhost:5678)
-  - `webhook.devai.com` → WebApp webhook endpoint
+  - `n8n.devai.sbs` → n8n instance (localhost:5678)
+  - `webhook.devai.sbs` → WebApp webhook endpoint
 
 ### 2. Cloudflare Tunnel
-- Tunnel Name: `n8n-tunnel`
-- Tunnel ID: `901c4410-18be-4f33-b6a8-1be86b2dd122`
+- Tunnel Name: `devai-tunnel`
+- Tunnel ID: `d33c3aec-40bc-4571-93f4-26afa64964bc`
 - Protocol: HTTP/HTTPS
 - Routing:
   - n8n subdomain → localhost:5678

@@ -34,8 +34,8 @@ services:
       N8N_PROTOCOL: http
 
       # GANTI dengan URL Cloudflare (HAPUS semua URL ngrok)
-      N8N_EDITOR_BASE_URL: "https://n8n.devai.com"
-      WEBHOOK_URL: "https://webhook.devai.com"
+      N8N_EDITOR_BASE_URL: "https://n8n.devai.sbs"
+      WEBHOOK_URL: "https://webhook.devai.sbs"
 
       # Zona waktu (opsional)
       GENERIC_TIMEZONE: "Asia/Jakarta"
