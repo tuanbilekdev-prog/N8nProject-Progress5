@@ -9,8 +9,7 @@ services:
       POSTGRES_USER: n8n
       POSTGRES_PASSWORD: n8n_password
       POSTGRES_DB: n8n
-      N8N_EDITOR_BASE_URL: "https://unemigrating-visionally-jeffery.ngrok-free.dev"
-      WEBHOOK_URL: "https://unemigrating-visionally-jeffery.ngrok-free.dev/webhook/webhook-rag"
+      # HAPUS baris N8N_EDITOR_BASE_URL dan WEBHOOK_URL dari sini
     volumes:
       - n8n_postgres_data:/var/lib/postgresql/data
 
@@ -34,10 +33,9 @@ services:
       N8N_PORT: 5678
       N8N_PROTOCOL: http
 
-      # Ganti ini dengan URL ngrok kamu (setelah ngrok jalan)
-      # Contoh: https://ab12cd34ef.ngrok-free.app
-      N8N_EDITOR_BASE_URL: "https://unemigrating-visionally-jeffery.ngrok-free.dev"
-      WEBHOOK_URL: "https://unemigrating-visionally-jeffery.ngrok-free.dev"
+      # GANTI dengan URL Cloudflare (HAPUS semua URL ngrok)
+      N8N_EDITOR_BASE_URL: "https://n8n.devai.com"
+      WEBHOOK_URL: "https://webhook.devai.com"
 
       # Zona waktu (opsional)
       GENERIC_TIMEZONE: "Asia/Jakarta"

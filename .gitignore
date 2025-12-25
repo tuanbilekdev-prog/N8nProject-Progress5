@@ -4,4 +4,10 @@ node_modules/
 .env.local
 .DS_Store
 
+# N8N data
+n8n_data/
+
+# Cloudflare credentials (sensitive)
+.cloudflared/
+*.pem
 

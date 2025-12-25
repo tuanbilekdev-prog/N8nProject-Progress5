@@ -1,0 +1,14 @@
+﻿tunnel: 901c4410-18be-4f33-b6a8-1be86b2dd122
+credentials-file: C:\Users\lenovo\.cloudflared\901c4410-18be-4f33-b6a8-1be86b2dd122.json
+
+ingress:
+  # Route n8n subdomain ke localhost:5678
+  - hostname: n8n.devai.com
+    service: http://localhost:5678
+  
+  # Route webhook subdomain ke WebApp
+  - hostname: webhook.devai.com
+    service: http://localhost:3000
+  
+  # Catch-all rule (HARUS di akhir)
+  - service: http_status:404
