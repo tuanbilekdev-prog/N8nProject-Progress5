@@ -35,7 +35,21 @@ services:
 
       # GANTI dengan URL Cloudflare (HAPUS semua URL ngrok)
       N8N_EDITOR_BASE_URL: "https://n8n.devai.sbs"
-      WEBHOOK_URL: "https://webhook.devai.sbs"
+      # WEBHOOK_URL untuk Telegram webhook harus ke n8n, bukan webhook.devai.sbs
+      WEBHOOK_URL: "https://n8n.devai.sbs"
+
+      # Fix untuk Cloudflare Tunnel (trust proxy headers)
+      # n8n perlu trust proxy karena request datang melalui Cloudflare Tunnel
+      # Format: true (tanpa quotes) atau "true" - n8n akan convert ke boolean
+      N8N_TRUST_PROXY: "true"
+      
+      # Disable rate limiting untuk testing (sementara untuk fix 403 error)
+      # Rate limiting dengan X-Forwarded-For akan error jika trust proxy false
+      N8N_RATE_LIMIT_ENABLED: "false"
+      
+      # Disable telemetry untuk menghilangkan CORS error di localhost
+      # Telemetry mencoba akses ke https://n8n.devai.sbs dari localhost, menyebabkan CORS error
+      N8N_DIAGNOSTICS_ENABLED: "false"
 
       # Zona waktu (opsional)
       GENERIC_TIMEZONE: "Asia/Jakarta"

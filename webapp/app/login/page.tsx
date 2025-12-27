@@ -23,6 +23,13 @@ export default function LoginPage() {
       document.documentElement.setAttribute("data-theme", "dark");
     }
 
+    // Check for OAuth error in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get("error");
+    if (error === "google") {
+      setError("Terjadi kesalahan saat login dengan Google. Pastikan redirect URI sudah benar di Google Cloud Console: https://webhook.devai.sbs/api/auth/callback/google");
+    }
+
     // Check if user is already logged in
     getSession().then(session => {
       if (session) {
@@ -67,7 +74,11 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      await signIn("google", { callbackUrl: "/chat" });
+      // Use current origin untuk callback URL
+      const callbackUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/chat`
+        : "/chat";
+      await signIn("google", { callbackUrl });
     } catch (err) {
       setError("Terjadi kesalahan saat login dengan Google");
       setLoading(false);

@@ -80,7 +80,15 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      // Explicit authorization params untuk production
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     })
   );
 }
@@ -94,6 +102,9 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt", // Use JWT for simplicity, Supabase JS client handles data
     maxAge: 30 * 24 * 60 * 60 // 30 days
   },
+  // Fix untuk production domain (Cloudflare)
+  trustHost: true,
+  useSecureCookies: process.env.NEXTAUTH_URL?.startsWith('https://'),
   callbacks: {
     async signIn({ user, account, profile }) {
       // Handle Google OAuth - create user in database if not exists

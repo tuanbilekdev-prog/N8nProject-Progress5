@@ -5,6 +5,14 @@ ingress:
   # Route n8n subdomain ke localhost:5678
   - hostname: n8n.devai.sbs
     service: http://localhost:5678
+    originRequest:
+      # Forward headers dengan benar untuk n8n
+      httpHostHeader: n8n.devai.sbs
+      # Timeout settings
+      connectTimeout: 30s
+      tcpKeepAlive: 30s
+      # Disable compression untuk debugging (opsional)
+      # disableChunkedEncoding: false
   
   # Route webhook subdomain ke WebApp
   - hostname: webhook.devai.sbs
